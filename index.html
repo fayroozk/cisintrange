@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cisco Interface Range Generator</title>
+    <title>Cisco Interface Range Generator v4.0</title>
     <style>
         * {
             margin: 0;
@@ -1346,8 +1346,11 @@
             const hasCustomCommands = customCommands.length > 0;
             const is3850 = switchModel === '3850';
 
-            // Single interface handling
-            if (allRanges.length === 1) {
+            // Count total selected ports (not consolidated ranges)
+            const totalSelectedPorts = ports1.length + ports2.length;
+
+            // Single PORT handling (only ONE port selected total)
+            if (totalSelectedPorts === 1) {
                 const output = [`interface ${allRanges[0]}`];
                 if (hasCustomCommands) {
                     customCommands.forEach(cmd => output.push(cmd));
@@ -1356,14 +1359,17 @@
                 return output.join('\n');
             }
 
-            // Multiple interfaces - 3850 mode
+            // Multiple PORTS selected - always use "interface range"
+            // Even if they consolidate to one range (e.g., 1-5)
+
+            // 3850 mode - max 5 ranges per command
             if (is3850) {
                 const maxRanges = 5;
                 const output = [];
 
                 for (let i = 0; i < allRanges.length; i += maxRanges) {
                     const chunk = allRanges.slice(i, i + maxRanges);
-                    output.push(`int range ${chunk.join(', ')}`);
+                    output.push(`interface range ${chunk.join(', ')}`);
 
                     if (hasCustomCommands) {
                         customCommands.forEach(cmd => output.push(cmd));
@@ -1374,8 +1380,8 @@
                 return output.join('\n');
             }
 
-            // Standard mode
-            const output = [`int range ${allRanges.join(',')}`];
+            // Standard mode - all ranges in one command
+            const output = [`interface range ${allRanges.join(',')}`];
             if (hasCustomCommands) {
                 customCommands.forEach(cmd => output.push(cmd));
             }
